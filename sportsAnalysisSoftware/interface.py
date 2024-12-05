@@ -1,21 +1,34 @@
+from abc import ABC, abstractmethod
+from PIL import Image, ImageTk  # For handling images
 import tkinter as tk
-from tkinter import ttk, messagebox
-from scraper import WebScraper
-import os
-from PIL import Image, ImageTk
-
-from PIL import Image, ImageTk  # Pillow for resizing images
-import tkinter as tk
+from tkinter import messagebox
 import os
 
-class SportOptionPage(tk.Frame):
-    """Page to choose a sport."""
 
+class Page(tk.Frame, ABC):
+    """Abstract base class for all pages in the application."""
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
 
-        # Title
+    @abstractmethod
+    def initialize(self):
+        """Initialize the page layout and widgets."""
+        pass
+
+    def navigate(self, page_name):
+        """Navigate to a specific page by name."""
+        self.controller.show_page(page_name)
+
+
+class SportOptionPage(Page):
+    """Page to choose a sport."""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+        self.initialize()
+
+    def initialize(self):
+        """Setup widgets for the sport selection page."""
         label = tk.Label(self, text="Choose a Sport", font=("Arial", 20))
         label.grid(row=0, column=0, columnspan=3, pady=20)  # Center title above buttons
 
@@ -62,28 +75,26 @@ class SportOptionPage(tk.Frame):
     def go_to_search_page(self, sport_name, base_url):
         """Navigate to the search page with sport name and base URL."""
         search_page = self.controller.pages["SearchPage"]
-        search_page.set_sport(sport_name, base_url)  # Pass data to SearchPage
-        self.controller.show_page("SearchPage")
+        search_page.set_sport(sport_name, base_url)
+        self.navigate("SearchPage")
 
 
-class SearchPage(tk.Frame):
+class SearchPage(Page):
     """Page to search for a player."""
-
     def __init__(self, parent, controller):
-        super().__init__(parent)
-        self.controller = controller
+        super().__init__(parent, controller)
         self.sport_name = None  # Name of the selected sport
         self.base_url = None    # Base URL of the selected sport
+        self.initialize()
 
-        # Title label (dynamically updated)
+    def initialize(self):
+        """Setup widgets for the player search page."""
         self.title_label = tk.Label(self, text="", font=("Arial", 20))
         self.title_label.pack(pady=20)
 
-        # Input field for player name
         self.player_entry = tk.Entry(self, width=40)
         self.player_entry.pack(pady=10)
 
-        # Search button
         search_button = tk.Button(
             self,
             text="Search",
@@ -92,44 +103,42 @@ class SearchPage(tk.Frame):
         )
         search_button.pack(pady=10)
 
+        self.result_label = tk.Label(self, text="", font=("Arial", 12), fg="green")
+        self.result_label.pack(pady=10)
+
     def set_sport(self, sport_name, base_url):
         """Set the sport's name and base URL dynamically."""
         self.sport_name = sport_name
         self.base_url = base_url
-
-        # Update the title label
         self.title_label.config(text=f"Search {sport_name} Player")
 
-
     def search_player(self):
-        """Placeholder for player search functionality."""
+        """Search for the player's stats and build the URL."""
         player_name = self.player_entry.get().strip()
         if not player_name:
             messagebox.showwarning("Warning", "Please enter a player's name.")
-        else:
-            first_name, last_name= player_name.split()
-            messagebox.showinfo("Info", f"Searching for {player_name} in {self.sport_name}.")
+            return
 
-            #For url construction to scraper.
-
-            if len(last_name)<5:
-                last_name=str(last_name)
+        # Split first and last name
+        try:
+            first_name, last_name = player_name.split()
+            if len(last_name) < 5:
+                last_name_url = last_name
             else:
-                last_name= str(last_name[:5])
+                last_name_url = last_name[:5]
 
-            url_ending= last_name.lower()+str(first_name[:2].lower())+'01'
-            print(url_ending)
-            print(self.base_url)
+            first_name_url = first_name[:2].lower()
+            url_ending = f"{last_name_url.lower()}{first_name_url}01"
 
-            if self.sport_name== 'Baseball':
-                full_url=self.base_url+last_name[0].lower()+'/'+url_ending+'.shtml'
-            else:    
-                full_url=self.base_url+last_name[0].lower()+'/'+url_ending+'.html'
+            if self.sport_name == 'Baseball':
+                full_url = f"{self.base_url}{last_name[0].lower()}/{url_ending}.shtml"
+            else:
+                full_url = f"{self.base_url}{last_name[0].lower()}/{url_ending}.html"
+
+            self.result_label.config(text=f"URL: {full_url}")
             print(full_url)
-
-            return full_url
-
-        
+        except ValueError:
+            messagebox.showerror("Error", "Please enter a valid first and last name.")
 
 
 class MainApplication(tk.Tk):
