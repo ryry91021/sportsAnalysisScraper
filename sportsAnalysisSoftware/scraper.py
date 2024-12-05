@@ -14,7 +14,7 @@ class WebScraper:
     
 
     def fetch_data(self):
-        """Fetch HTML content from the provided URL."""
+        """Verifies URL and returns soup object to retrieve the desired table"""
         response = requests.get(self.url)
         if response.status_code != 200:
             raise Exception(f"Failed to retrieve data. HTTP Status code: {response.status_code}")
@@ -23,7 +23,11 @@ class WebScraper:
     def get_stats_table(self):
         """Extract the stats table from the HTML content."""
         soup = self.fetch_data()
-        stats_pg = soup.find(id="per_game")
-        if stats_pg is None:
+        try:
+            df = soup.find(id="last5")
+        except Exception as e:
+            print(f"Could not find last 5 game data: {e}")
+            df=soup.find(id='pergame')
+        if df is None:
             raise Exception("Stats table not found on the page.")
-        return pd.read_html(str(stats_pg))[0]
+        return pd.read_html(str(df))[0]
