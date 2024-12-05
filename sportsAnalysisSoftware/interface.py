@@ -1,6 +1,12 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from scraper import WebScraper
+import os
+from PIL import Image, ImageTk
+
+from PIL import Image, ImageTk  # Pillow for resizing images
+import tkinter as tk
+import os
 
 class SportOptionPage(tk.Frame):
     """Page to choose a sport."""
@@ -11,30 +17,55 @@ class SportOptionPage(tk.Frame):
 
         # Title
         label = tk.Label(self, text="Choose a Sport", font=("Arial", 20))
-        label.pack(pady=20)
+        label.grid(row=0, column=0, columnspan=3, pady=20)  # Center title above buttons
 
-        # Buttons options
+        # Path to the images folder
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        images_dir = os.path.join(base_dir, "images")
+
+        # Sports data: name, URL, and image path
         sports = [
-            ("Basketball", "https://www.basketball-reference.com"),
-            ("Baseball", "https://www.baseball-reference.com"),
-            ("Hockey", "https://www.hockey-reference.com"),
+            ("Basketball", "https://www.basketball-reference.com", os.path.join(images_dir, "nba_logo.png")),
+            ("Baseball", "https://www.baseball-reference.com", os.path.join(images_dir, "mlb_logo.png")),
+            ("Hockey", "https://www.hockey-reference.com", os.path.join(images_dir, "nhl_logo.png")),
         ]
 
-        for sport_name, base_url in sports:
+        # Configure grid for centering
+        self.grid_rowconfigure(1, weight=1)  # Center vertically
+        self.grid_columnconfigure(0, weight=1)  # Center horizontally
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(2, weight=1)
+
+        # Create buttons for each sport
+        for col, (sport_name, base_url, image_path) in enumerate(sports):
+            # Load and resize image
+            try:
+                image = Image.open(image_path)
+                resized_image = image.resize((100, 100), Image.Resampling.LANCZOS)
+                sport_image = ImageTk.PhotoImage(resized_image)
+            except Exception as e:
+                print(f"Error loading image {image_path}: {e}")
+                sport_image = None
+
+            # Create button
             button = tk.Button(
                 self,
-                text=f"{sport_name} Player",
+                text=sport_name,
                 font=("Arial", 14),
+                image=sport_image,
+                compound="top",  # Image above text
                 command=lambda sn=sport_name, url=base_url: self.go_to_search_page(sn, url)
             )
-            button.pack(pady=10)
+            button.image = sport_image  # Prevent garbage collection
+            button.grid(row=1, column=col, padx=10, pady=10)  # Place buttons side by side
 
     def go_to_search_page(self, sport_name, base_url):
         """Navigate to the search page with sport name and base URL."""
         search_page = self.controller.pages["SearchPage"]
         search_page.set_sport(sport_name, base_url)  # Pass data to SearchPage
         self.controller.show_page("SearchPage")
-        
+
+
 class SearchPage(tk.Frame):
     """Page to search for a player."""
 
@@ -80,7 +111,13 @@ class SearchPage(tk.Frame):
             messagebox.showinfo("Info", f"Searching for {player_name} in {self.sport_name}.")
 
             #For url construction to scraper.
-            url_ending= str(last_name[:5])+str(first_name[:2])+'01'
+
+            if len(last_name)<5:
+                last_name=str(last_name)
+            else:
+                last_name= str(last_name[:5])
+
+            url_ending= last_name.lower()+str(first_name[:2].lower())+'01'
             print(url_ending)
 
             return url_ending
