@@ -25,9 +25,9 @@ class SportOptionPage(tk.Frame):
 
         # Sports data: name, URL, and image path
         sports = [
-            ("Basketball", "https://www.basketball-reference.com", os.path.join(images_dir, "nba_logo.png")),
-            ("Baseball", "https://www.baseball-reference.com", os.path.join(images_dir, "mlb_logo.png")),
-            ("Hockey", "https://www.hockey-reference.com", os.path.join(images_dir, "nhl_logo.png")),
+            ("Basketball", "https://www.basketball-reference.com/players/", os.path.join(images_dir, "nba_logo.png")),
+            ("Baseball", "https://www.baseball-reference.com/players/", os.path.join(images_dir, "mlb_logo.png")),
+            ("Hockey", "https://www.hockey-reference.com/players/", os.path.join(images_dir, "nhl_logo.png")),
         ]
 
         # Configure grid for centering
@@ -119,8 +119,15 @@ class SearchPage(tk.Frame):
 
             url_ending= last_name.lower()+str(first_name[:2].lower())+'01'
             print(url_ending)
+            print(self.base_url)
 
-            return url_ending
+            if self.sport_name== 'Baseball':
+                full_url=self.base_url+last_name[0].lower()+'/'+url_ending+'.shtml'
+            else:    
+                full_url=self.base_url+last_name[0].lower()+'/'+url_ending+'.html'
+            print(full_url)
+
+            return full_url
 
         
 
