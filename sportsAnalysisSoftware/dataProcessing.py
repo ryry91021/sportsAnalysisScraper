@@ -24,13 +24,29 @@ class Graph(ABC):
 
 
 class BarGraphWithSelection(Graph):
-    """Concrete class for creating bar graphs with user-selected columns."""
+    """Singleton class for creating bar graphs with user-selected columns."""
+    _instance = None  # Class-level variable to store the single instance
+
+    def __new__(cls, *args, **kwargs):
+        """Ensure only one instance of the class is created."""
+        if cls._instance is None:
+            cls._instance = super(BarGraphWithSelection, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, title, x_label, y_label):
-        super().__init__(title, x_label, y_label)
+        """Initialize the bar graph with the given title and axis labels."""
+        if not hasattr(self, "initialized"):  # Ensure initialization happens only once
+            super().__init__(title, x_label, y_label)
+            self.initialized = True  # Mark as initialized
+            self.athlete_name = "Athlete"  # Default athlete name
+
+    def set_athlete_name(self, name):
+        """Set the athlete's name."""
+        self.athlete_name = name
 
     def plot(self, df, **kwargs):
         """Prompt user for columns and plot the selected bar graph."""
-        selected_columns = self.prompt_user_for_columns(df)  # Pass the df
+        selected_columns = self.prompt_user_for_columns(df)
         if not selected_columns:
             print("No columns selected. Graph will not be generated.")
             return
@@ -40,7 +56,9 @@ class BarGraphWithSelection(Graph):
         x = means.index  # Column names for the x-axis
         y = means.values  # Mean values for the y-axis
 
+        # Include the athlete's name in the title
         plt.bar(x, y, color="skyblue")
+        plt.title(f"{self.athlete_name}'s Selected Stats")
         self.setup_graph()
         plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
         plt.tight_layout()
@@ -50,7 +68,7 @@ class BarGraphWithSelection(Graph):
         """Prompt user to select numerical columns to include in the bar graph."""
         from tkinter import Toplevel, Checkbutton, IntVar, Button, Label, messagebox
 
-        # Filter only numerical columns by attempting to convert to numeric
+        # Filter only numerical columns
         numerical_columns = [
             col for col in df.columns
             if pd.to_numeric(df[col], errors="coerce").notna().all()

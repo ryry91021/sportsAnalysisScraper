@@ -203,13 +203,19 @@ class DataDisplayPage(Page):
             messagebox.showerror("Error", "No data available to create a graph.")
             return
 
+        # Create or get the Singleton graph instance
         graph = BarGraphWithSelection(
             title="Selected Numerical Stats",
             x_label="Index",
             y_label="Values"
         )
-        graph.plot(self.df)
+        
+        # Set the athlete's name (you can retrieve this dynamically)
+        athlete_name = self.controller.pages["SearchPage"].player_entry.get().strip()  # Get the name from the SearchPage
+        graph.set_athlete_name(athlete_name)  # Pass the athlete name to the graph
 
+        # Plot the graph
+        graph.plot(self.df)
 
 
 class MainApplication(tk.Tk):
