@@ -43,6 +43,7 @@ class BarGraphWithSelection(Graph):
     def set_athlete_name(self, name):
         """Set the athlete's name."""
         self.athlete_name = name
+        print(name)
 
     def plot(self, df, **kwargs):
         """Prompt user for columns and plot the selected bar graph."""
