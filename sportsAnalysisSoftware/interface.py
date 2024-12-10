@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from PIL import Image, ImageTk  # For handling images
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 import os
+from scraper import *
+from dataProcessing import *
 
 
 class Page(tk.Frame, ABC):
@@ -14,7 +16,7 @@ class Page(tk.Frame, ABC):
     @abstractmethod
     def initialize(self):
         """Initialize the page layout and widgets."""
-        pass
+        pass 
 
     def navigate(self, page_name):
         """Navigate to a specific page by name."""
@@ -113,48 +115,149 @@ class SearchPage(Page):
         self.title_label.config(text=f"Search {sport_name} Player")
 
     def search_player(self):
-        """Search for the player's stats and build the URL."""
+        """Search for the player's stats and navigate to DataDisplayPage."""
         player_name = self.player_entry.get().strip()
         if not player_name:
             messagebox.showwarning("Warning", "Please enter a player's name.")
             return
 
-        # Split first and last name
         try:
+            # Split player name into first and last
             first_name, last_name = player_name.split()
+
+            # Construct the player's specific URL
             if len(last_name) < 5:
-                last_name_url = last_name
+                last_name_part = last_name.lower()
             else:
-                last_name_url = last_name[:5]
+                last_name_part = last_name[:5].lower()
 
-            first_name_url = first_name[:2].lower()
-            url_ending = f"{last_name_url.lower()}{first_name_url}01"
+            first_name_part = first_name[:2].lower()
+            player_url_ending = f"{last_name_part}{first_name_part}01"
 
+            # Adjust URL based on sport
             if self.sport_name == 'Baseball':
-                full_url = f"{self.base_url}{last_name[0].lower()}/{url_ending}.shtml"
-            else:
-                full_url = f"{self.base_url}{last_name[0].lower()}/{url_ending}.html"
+                full_url = f"{self.base_url}{last_name[0].lower()}/{player_url_ending}.shtml"
+            else:  # For Basketball and Hockey
+                full_url = f"{self.base_url}{last_name[0].lower()}/{player_url_ending}.html"
 
-            self.result_label.config(text=f"URL: {full_url}")
-            print(full_url)
+            print(f"Constructed URL: {full_url}")  # Debugging
+
+            # Pass the constructed URL to the WebScraper
+            scraper = WebScraper(full_url)
+            df = scraper.get_stats_table()
+
+            # Pass DataFrame to DataDisplayPage
+            data_display_page = self.controller.pages["DataDisplayPage"]
+            data_display_page.display_dataframe(df)
+
+            # Navigate to DataDisplayPage
+            self.navigate("DataDisplayPage")
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid first and last name.")
+            messagebox.showerror("Error", "Please enter both first and last name.")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+
+
+class DataDisplayPage(Page):
+    """Page to display player statistics in both a table and plain text."""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+        print("DataDisplayPage: Initializing...")  # Debugging
+        self.initialize()  # Ensure this is called to set up widgets
+
+    def initialize(self):
+        """Setup the layout with a Treeview, plain text display, and a graph button."""
+        print("Initializing DataDisplayPage...")  # Debugging
+
+        # Configure grid layout
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=0)  # Title
+        self.grid_rowconfigure(1, weight=1)  # Treeview
+        self.grid_rowconfigure(2, weight=0)  # Button
+        self.grid_rowconfigure(3, weight=1)  # Text Display
+
+        # Title
+        self.title_label = tk.Label(self, text="Player Statistics", font=("Arial", 20))
+        self.title_label.grid(row=0, column=0, pady=10, sticky="n")
+
+        # Create Treeview widget for tabular data
+        self.tree = ttk.Treeview(self, show="headings")
+        self.tree.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
+        print("Treeview initialized and packed.")  # Debugging
+
+        # Add "Create Bar Graph" button
+        self.graph_button = tk.Button(
+            self,
+            text="Create Bar Graph",
+            font=("Arial", 14),
+            command=self.create_bar_graph  # Function to generate the graph
+        )
+        self.graph_button.grid(row=2, column=0, pady=10, sticky="n")
+        print("Graph Button added and packed.")  # Debugging
+
+        # Add plain text display for DataFrame
+        self.text_display = tk.Text(self, wrap="none", height=10, font=("Courier", 10))
+        self.text_display.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
+
+
+
+
+    def display_dataframe(self, df):
+        """Display the DataFrame in the UI."""
+        if not hasattr(self, "tree"):
+            messagebox.showerror("Error", "Treeview widget is not initialized.")
+            return
+
+        self.df = df  # Save the DataFrame for graph creation
+
+        # Populate Treeview
+        self.tree.delete(*self.tree.get_children())
+        self.tree["columns"] = list(df.columns)
+        for col in df.columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, anchor="center", width=max(100, len(col) * 10))
+        for _, row in df.iterrows():
+            self.tree.insert("", "end", values=list(row))
+
+        # Update plain text display
+        self.text_display.delete("1.0", tk.END)
+        self.text_display.insert("1.0", df.to_string(index=False))
+
+
+
+    def create_bar_graph(self):
+        """Trigger the bar graph creation process."""
+        if not hasattr(self, "df") or self.df.empty:
+            messagebox.showerror("Error", "No data available to create a graph.")
+            return
+
+        graph = BarGraphWithSelection(
+            title="Selected Numerical Stats",
+            x_label="Index",
+            y_label="Values"
+        )
+        graph.plot(self.df)
+
+
+
+
+
 
 
 class MainApplication(tk.Tk):
     """Main application managing all pages."""
-
     def __init__(self):
         super().__init__()
         self.title("Sports Stats Viewer")
-        self.geometry("600x400")
+        self.geometry("800x600")
 
-        # Container to hold all pages
+        # Container for pages
         container = tk.Frame(self)
         container.pack(fill="both", expand=True)
 
         self.pages = {}
-        for Page in (SportOptionPage, SearchPage):
+        for Page in (SportOptionPage, SearchPage, DataDisplayPage):
             page_name = Page.__name__
             frame = Page(parent=container, controller=self)
             self.pages[page_name] = frame
@@ -163,9 +266,10 @@ class MainApplication(tk.Tk):
         self.show_page("SportOptionPage")
 
     def show_page(self, page_name):
-        """Switch to the given page."""
+        """Switch to the specified page."""
         page = self.pages[page_name]
         page.tkraise()
+
 
 
 if __name__ == "__main__":
