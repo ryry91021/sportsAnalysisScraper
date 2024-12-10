@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
+from tkinter import messagebox
+import pandas as pd
 
 class Graph(ABC):
     """Abstract base class for creating graphs."""
@@ -46,11 +48,16 @@ class BarGraphWithSelection(Graph):
 
     def prompt_user_for_columns(self, df):
         """Prompt user to select numerical columns to include in the bar graph."""
-        from tkinter import Toplevel, Checkbutton, IntVar, Button, Label
+        from tkinter import Toplevel, Checkbutton, IntVar, Button, Label, messagebox
 
-        numerical_columns = df.select_dtypes(include=["number"]).columns
-        if numerical_columns.empty:
-            print("No numerical columns available for selection.")
+        # Filter only numerical columns by attempting to convert to numeric
+        numerical_columns = [
+            col for col in df.columns
+            if pd.to_numeric(df[col], errors="coerce").notna().all()
+        ]
+
+        if not numerical_columns:
+            messagebox.showerror("Error", "No numerical columns available for selection.")
             return []
 
         selected_vars = {}
@@ -66,17 +73,14 @@ class BarGraphWithSelection(Graph):
         for col in numerical_columns:
             var = IntVar()
             cb = Checkbutton(popup, text=col, variable=var)
-            cb.pack(anchor="w", padx=20)
+            cb.pack(anchor="w", padx=10)
             selected_vars[col] = var
 
-        # Confirm selection
         def confirm_selection():
             nonlocal selected_columns
             selected_columns = [col for col, var in selected_vars.items() if var.get()]
-            print(f"Selected columns: {selected_columns}")  # Debug
             popup.destroy()
 
         Button(popup, text="Confirm", command=confirm_selection).pack(pady=10)
-
-        popup.wait_window()  # Wait for the user to close the popup
+        popup.wait_window()
         return selected_columns

@@ -32,7 +32,7 @@ class WebScraper:
 
         # Fall back to 'per_game' table if 'last5' not found
         print("'last5' table not found. Checking for 'per_game' table.")
-        per_game_table = soup.find('table', id='per_game')
+        per_game_table = soup.find('table', id='per_game_stats')
         if per_game_table is not None:
             print("Found 'per_game' table.")
             return pd.read_html(StringIO(str(per_game_table)))[0]  # Wrap in StringIO
