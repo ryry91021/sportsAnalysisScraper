@@ -160,71 +160,42 @@ class SearchPage(Page):
 
 
 class DataDisplayPage(Page):
-    """Page to display player statistics in both a table and plain text."""
+    """Page to display player statistics and allow graph creation."""
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
         print("DataDisplayPage: Initializing...")  # Debugging
         self.initialize()  # Ensure this is called to set up widgets
 
     def initialize(self):
-        """Setup the layout with a Treeview, plain text display, and a graph button."""
+        """Setup the layout with a plain text display and a graph button."""
         print("Initializing DataDisplayPage...")  # Debugging
-
-        # Configure grid layout
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=0)  # Title
-        self.grid_rowconfigure(1, weight=1)  # Treeview
-        self.grid_rowconfigure(2, weight=0)  # Button
-        self.grid_rowconfigure(3, weight=1)  # Text Display
 
         # Title
         self.title_label = tk.Label(self, text="Player Statistics", font=("Arial", 20))
-        self.title_label.grid(row=0, column=0, pady=10, sticky="n")
+        self.title_label.pack(pady=10)
 
-        # Create Treeview widget for tabular data
-        self.tree = ttk.Treeview(self, show="headings")
-        self.tree.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
-        print("Treeview initialized and packed.")  # Debugging
+        # Add plain text display for DataFrame
+        self.text_display = tk.Text(self, wrap="none", height=15, font=("Courier", 10))
+        self.text_display.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Add "Create Bar Graph" button
+        print("Adding Create Bar Graph button...")  # Debugging
         self.graph_button = tk.Button(
             self,
             text="Create Bar Graph",
             font=("Arial", 14),
             command=self.create_bar_graph  # Function to generate the graph
         )
-        self.graph_button.grid(row=2, column=0, pady=10, sticky="n")
+        self.graph_button.pack(pady=10)
         print("Graph Button added and packed.")  # Debugging
 
-        # Add plain text display for DataFrame
-        self.text_display = tk.Text(self, wrap="none", height=10, font=("Courier", 10))
-        self.text_display.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
-
-
-
-
     def display_dataframe(self, df):
-        """Display the DataFrame in the UI."""
-        if not hasattr(self, "tree"):
-            messagebox.showerror("Error", "Treeview widget is not initialized.")
-            return
-
+        """Display the DataFrame as plain text in the UI."""
         self.df = df  # Save the DataFrame for graph creation
-
-        # Populate Treeview
-        self.tree.delete(*self.tree.get_children())
-        self.tree["columns"] = list(df.columns)
-        for col in df.columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, anchor="center", width=max(100, len(col) * 10))
-        for _, row in df.iterrows():
-            self.tree.insert("", "end", values=list(row))
 
         # Update plain text display
         self.text_display.delete("1.0", tk.END)
         self.text_display.insert("1.0", df.to_string(index=False))
-
-
 
     def create_bar_graph(self):
         """Trigger the bar graph creation process."""
@@ -238,10 +209,6 @@ class DataDisplayPage(Page):
             y_label="Values"
         )
         graph.plot(self.df)
-
-
-
-
 
 
 

@@ -28,16 +28,19 @@ class BarGraphWithSelection(Graph):
 
     def plot(self, df, **kwargs):
         """Prompt user for columns and plot the selected bar graph."""
-        selected_columns = self.prompt_user_for_columns(df)
+        selected_columns = self.prompt_user_for_columns(df)  # Pass the df
         if not selected_columns:
             print("No columns selected. Graph will not be generated.")
             return
 
-        for col in selected_columns:
-            plt.bar(df.index, df[col], label=col)
+        # Prepare data for the graph
+        means = df[selected_columns].mean()  # Calculate the mean of each selected column
+        x = means.index  # Column names for the x-axis
+        y = means.values  # Mean values for the y-axis
 
+        plt.bar(x, y, color="skyblue")
         self.setup_graph()
-        plt.legend(title="Stats")
+        plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
         plt.tight_layout()
         plt.show()
 
