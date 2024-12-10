@@ -13,7 +13,7 @@ class Graph(ABC):
 
     @abstractmethod
     def plot(self, data, **kwargs):
-        """Abstract method to plot the graph. Must be implemented by subclasses."""
+        """Abstract method to plot the graph."""
         pass
 
     def setup_graph(self):

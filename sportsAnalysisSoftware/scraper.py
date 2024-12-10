@@ -40,12 +40,12 @@ class WebScraper:
         # Raise an error if neither table is found
         raise Exception("Neither 'last5' nor 'per_game' stats table found on the page.")
 
-# Test the WebScraper with the corrected implementation
-url = "https://www.basketball-reference.com/players/b/brunsja01.html"
-scraper = WebScraper(url)
+# # Test the WebScraper with the corrected implementation
+# url = "https://www.basketball-reference.com/players/b/brunsja01.html"
+# scraper = WebScraper(url)
 
-try:
-    stats_table = scraper.get_stats_table()
-    print(stats_table.head())  # Display the first few rows of the table
-except Exception as e:
-    print(str(e))
+# try:
+#     stats_table = scraper.get_stats_table()
+#     print(stats_table.head())  # Display the first few rows of the table
+# except Exception as e:
+#     print(str(e))
