@@ -234,34 +234,3 @@ class DataDisplayPage(Page):
             # Plot the graph
             graph.plot(self.df)
 
-
-class MainApplication(tk.Tk):
-    """Main application managing all pages."""
-    def __init__(self):
-        super().__init__()
-        self.title("Sports Stats Viewer")
-        self.geometry("800x600")
-
-        # Container for pages
-        container = tk.Frame(self)
-        container.pack(fill="both", expand=True)
-
-        self.pages = {}
-        for Page in (SportOptionPage, SearchPage, DataDisplayPage):
-            page_name = Page.__name__
-            frame = Page(parent=container, controller=self)
-            self.pages[page_name] = frame
-            frame.grid(row=0, column=0, sticky="nsew") 
-
-        self.show_page("SportOptionPage")
-
-    def show_page(self, page_name):
-        """Switch to the specified page."""
-        page = self.pages[page_name]
-        page.tkraise()
-
-
-
-if __name__ == "__main__":
-    app = MainApplication()
-    app.mainloop()
