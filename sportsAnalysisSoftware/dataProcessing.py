@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from tkinter import messagebox
 import pandas as pd
 
+
 class Graph(ABC):
     """Abstract base class for creating graphs."""
     
@@ -47,23 +48,37 @@ class BarGraphWithSelection(Graph):
 
     def plot(self, df, **kwargs):
         """Prompt user for columns and plot the selected bar graph."""
+        # Ensure all columns are numeric where possible
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+        # Drop rows and columns fully filled with NaNs
+        df = df.dropna(axis=1, how='all').dropna(axis=0, how='all')
+
+        if df.empty:
+            messagebox.showerror("Error", "No numerical data available after cleaning.")
+            return
+
+        # Prompt user for valid columns
         selected_columns = self.prompt_user_for_columns(df)
         if not selected_columns:
             print("No columns selected. Graph will not be generated.")
             return
 
         # Prepare data for the graph
-        means = df[selected_columns].mean()  # Calculate the mean of each selected column
-        x = means.index  # Column names for the x-axis
-        y = means.values  # Mean values for the y-axis
+        means = df[selected_columns].mean()
+        x = means.index.astype(str)  # Ensure indices are strings
+        y = means.values
 
-        # Include the athlete's name in the title
+        # Plot the bar graph
         plt.bar(x, y, color="skyblue")
         plt.title(f"{self.athlete_name}'s Selected Stats")
         self.setup_graph()
-        plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+        plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()
+
+
 
     def prompt_user_for_columns(self, df):
         """Prompt user to select numerical columns to include in the bar graph."""
@@ -72,7 +87,7 @@ class BarGraphWithSelection(Graph):
         # Filter only numerical columns
         numerical_columns = [
             col for col in df.columns
-            if pd.to_numeric(df[col], errors="coerce").notna().all()
+            if pd.api.types.is_numeric_dtype(pd.to_numeric(df[col], errors="coerce"))
         ]
 
         if not numerical_columns:

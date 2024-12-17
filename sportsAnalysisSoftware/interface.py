@@ -143,7 +143,8 @@ class SearchPage(Page):
             print(f"Constructed URL: {full_url}")  # Debugging
 
             # Pass the constructed URL to the WebScraper
-            scraper = WebScraper(full_url)
+            print(self.sport_name)
+            scraper = WebScraper(full_url, self.sport_name)
             df = scraper.get_stats_table()
 
             # Pass DataFrame to DataDisplayPage
@@ -199,23 +200,39 @@ class DataDisplayPage(Page):
 
     def create_bar_graph(self):
         """Trigger the bar graph creation process."""
-        if not hasattr(self, "df") or self.df.empty:
-            messagebox.showerror("Error", "No data available to create a graph.")
-            return
+        try:
+            if not hasattr(self, "df") or self.df.empty:
+                messagebox.showerror("Error", "No data available to create a graph.")
+                return
 
-        # Create or get the Singleton graph instance
-        graph = BarGraphWithSelection(
-            title="Selected Numerical Stats",
-            x_label="Index",
-            y_label="Values"
-        )
-        
-        # Set the athlete's name (you can retrieve this dynamically)
-        athlete_name = self.controller.pages["SearchPage"].player_entry.get().strip()  # Get the name from the SearchPage
-        graph.set_athlete_name(athlete_name)  # Pass the athlete name to the graph
+            # Create the graph instance
+            graph = BarGraphWithSelection(
+                title="Selected Numerical Stats",
+                x_label="Metric",
+                y_label="Values"
+            )
 
-        # Plot the graph
-        graph.plot(self.df)
+            # Pass DataFrame to the graph and attempt to plot
+            graph.plot(self.df)
+
+        except Exception as e:
+            print(f"Error: {e}")  # Log the error to console
+            messagebox.showerror("Error", f"An error occurred: {e}")
+
+
+            # Create or get the Singleton graph instance
+            graph = BarGraphWithSelection(
+                title="Selected Numerical Stats",
+                x_label="Index",
+                y_label="Values"
+            )
+            
+            # Set the athlete's name (you can retrieve this dynamically)
+            athlete_name = self.controller.pages["SearchPage"].player_entry.get().strip()  # Get the name from the SearchPage
+            graph.set_athlete_name(athlete_name)  # Pass the athlete name to the graph
+
+            # Plot the graph
+            graph.plot(self.df)
 
 
 class MainApplication(tk.Tk):
@@ -234,7 +251,7 @@ class MainApplication(tk.Tk):
             page_name = Page.__name__
             frame = Page(parent=container, controller=self)
             self.pages[page_name] = frame
-            frame.grid(row=0, column=0, sticky="nsew")
+            frame.grid(row=0, column=0, sticky="nsew") 
 
         self.show_page("SportOptionPage")
 
