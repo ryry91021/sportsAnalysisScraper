@@ -39,7 +39,7 @@ class BarGraphWithSelection(Graph):
         if not hasattr(self, "initialized"):  # Ensure initialization happens only once
             super().__init__(title, x_label, y_label)
             self.initialized = True  # Mark as initialized
-            self.athlete_name = "Athlete"  # Default athlete name
+            self.athlete_name = "Athlete"
 
     def set_athlete_name(self, name):
         """Set the athlete's name."""
